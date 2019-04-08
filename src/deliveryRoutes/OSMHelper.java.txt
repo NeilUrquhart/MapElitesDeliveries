@@ -1,0 +1,59 @@
+package deliveryRoutes;
+
+import java.util.HashMap;
+
+import com.graphhopper.routing.util.FlagEncoder;
+
+import edu.napier.geo.common.Journey;
+import edu.napier.geo.common.Location;
+import facade.GHFacade;
+
+public class OSMHelper {
+
+	private static HashMap<String , Object> options;
+	
+	private static GHFacade graphhopper = null;
+	private static HashMap<String, Journey[]> cache = new HashMap<String, Journey[]>();
+	
+	public static GHFacade setupGraphHopper(){
+		//Create a new GraphHopper Facade
+		graphhopper = new GHFacade();
+		options = graphhopper.getOptionsMap();
+		//Setup GraphHopper using the optionsMap	
+		String osmfile = "C:\\Users\\cyrme\\Documents\\University\\Year 3\\Placement\\Frankfurt.osm.pbf";
+		String folderPath = "./osmdata2/";
+
+		FlagEncoder car = graphhopper .getEncoder(graphhopper.CAR);
+		FlagEncoder bike = graphhopper .getEncoder(graphhopper.BIKE);
+		FlagEncoder foot = graphhopper.getEncoder(graphhopper.FOOT);
+		
+		FlagEncoder[] encoders = {foot,foot};
+		HashMap<String , Object> options = graphhopper .getOptionsMap();
+		options.put("pathToOSM", osmfile);
+		options.put("pathToFolder", folderPath);
+		options.put("profilesForGraph",encoders);
+		options.put("profileForRequest","foot");
+		options.put("enableCH",false);
+		options.put("maxVisitedNodes",10000);
+		options.put("includeElevation", false);
+		options.put("algorithm",graphhopper.ASTAR);
+
+		return graphhopper ;
+	}
+	
+	public static Journey[] getJourney(Location last, Location next){
+		String key = last.getLat()+""+last.getLon() +":" + next.getLat() +""+ next.getLon();
+		Journey[] res = cache.get(key);
+		if (res != null)
+			return res;
+		
+		if (graphhopper == null)
+			setupGraphHopper();
+		
+		res = graphhopper.getJourney(last, next, options);
+		cache.put(key, res);
+		return res;
+	}
+	
+	
+}
